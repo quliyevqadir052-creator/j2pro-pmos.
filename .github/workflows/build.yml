@@ -21,13 +21,13 @@ jobs:
       - name: 1. Sistem paketlərini və asılılıqları qur
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3 python3-pip python3-setuptools git openssl qemu-user-static binfmt-support android-sdk-libsparse-utils
+          sudo apt-get install -y python3 git openssl qemu-user-static binfmt-support android-sdk-libsparse-utils
 
-      - name: 2. Rəsmi pmbootstrap alətini klonla və quraşdır
+      - name: 2. Rəsmi pmbootstrap alətini klonla və bağla
         run: |
           git clone https://gitlab.com/postmarketOS/pmbootstrap.git ~/pmbootstrap
-          cd ~/pmbootstrap
-          sudo python3 setup.py install
+          sudo ln -s ~/pmbootstrap/pmbootstrap.py /usr/local/bin/pmbootstrap
+          chmod +x ~/pmbootstrap/pmbootstrap.py
 
       - name: 3. pmbootstrap konfiqurasiyasını yarat
         run: |
