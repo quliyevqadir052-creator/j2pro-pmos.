@@ -19,13 +19,12 @@ jobs:
 
     steps:
       - name: 1. Sistem paketlərini qur
-        run: sudo apt-get update && sudo apt-get install -y python3-pip python3-venv git openssl
+        run: sudo apt-get update && sudo apt-get install -y python3-pip git openssl
 
-      - name: 2. pmbootstrap-ı virtual mühitdə quraşdır
+      - name: 2. pmbootstrap-ı birbaşa pip ilə quraşdır
         run: |
-          python3 -m venv ~/pmos-venv
-          ~/pmos-venv/bin/pip install --upgrade pip
-          ~/pmos-venv/bin/pip install git+https://gitlab.com/postmarketOS/pmbootstrap.git
+          pip3 install --user --break-system-packages git+https://gitlab.com/postmarketOS/pmbootstrap.git
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: 3. pmbootstrap konfiqurasiyasını yarat
         run: |
@@ -58,18 +57,18 @@ jobs:
 
       - name: 4. pmaports bazasını endir və kanal seç
         run: |
-          ~/pmos-venv/bin/pmbootstrap -y init || true
+          pmbootstrap -y init || true
           git -C ~/.local/var/pmbootstrap/cache_git/pmaports checkout ${{ github.event.inputs.edge_channel }} || true
 
       - name: 5. postmarketOS imicini yığ
         run: |
-          printf "147147\n147147\n" | ~/pmos-venv/bin/pmbootstrap -y install --android-recovery-zip || \
-          printf "147147\n147147\n" | ~/pmos-venv/bin/pmbootstrap -y install
+          printf "147147\n147147\n" | pmbootstrap -y install --android-recovery-zip || \
+          printf "147147\n147147\n" | pmbootstrap -y install
 
       - name: 6. Hazır faylları topla
         run: |
           mkdir -p ~/output_files
-          ~/pmos-venv/bin/pmbootstrap export ~/output_files
+          pmbootstrap export ~/output_files
           ls -lh ~/output_files/
 
       - name: 7. Artifacts-ə yüklə
