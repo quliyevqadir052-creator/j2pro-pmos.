@@ -18,16 +18,15 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - name: 1. Sistem paketlərini və asılılıqları qur
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3 git openssl
+      - name: 1. Sistem paketlərini yenilə
+        run: sudo apt-get update && sudo apt-get install -y python3 git openssl
 
-      - name: 2. Rəsmi pmbootstrap alətini klonla və bağla
+      - name: 2. pmbootstrap quraşdır (pipx vasitəsilə)
         run: |
-          git clone https://gitlab.com/postmarketOS/pmbootstrap.git ~/pmbootstrap
-          sudo ln -s ~/pmbootstrap/pmbootstrap.py /usr/local/bin/pmbootstrap
-          chmod +x ~/pmbootstrap/pmbootstrap.py
+          sudo apt-get install -y pipx
+          pipx ensurepath
+          pipx install git+https://gitlab.com/postmarketOS/pmbootstrap.git
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: 3. pmbootstrap konfiqurasiyasını yarat
         run: |
@@ -60,18 +59,18 @@ jobs:
 
       - name: 4. pmaports bazasını endir və kanal seç
         run: |
-          pmbootstrap -y init || true
+          ~/.local/bin/pmbootstrap -y init || true
           git -C ~/.local/var/pmbootstrap/cache_git/pmaports checkout ${{ github.event.inputs.edge_channel }} || true
 
       - name: 5. postmarketOS imicini yığ
         run: |
-          printf "147147\n147147\n" | pmbootstrap -y install --android-recovery-zip || \
-          printf "147147\n147147\n" | pmbootstrap -y install
+          printf "147147\n147147\n" | ~/.local/bin/pmbootstrap -y install --android-recovery-zip || \
+          printf "147147\n147147\n" | ~/.local/bin/pmbootstrap -y install
 
       - name: 6. Hazır faylları topla
         run: |
           mkdir -p ~/output_files
-          pmbootstrap export ~/output_files
+          ~/.local/bin/pmbootstrap export ~/output_files
           ls -lh ~/output_files/
 
       - name: 7. Artifacts-ə yüklə
