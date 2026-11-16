@@ -21,16 +21,15 @@ jobs:
       - name: 1. Sistem paketlərini və asılılıqları qur
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3 python3-pip git openssl qemu-user-static binfmt-support android-sdk-libsparse-utils
+          sudo apt-get install -y python3 python3-pip python3-setuptools git openssl qemu-user-static binfmt-support android-sdk-libsparse-utils
 
-      - name: 2. Rəsmi pmbootstrap alətini yüklə
+      - name: 2. Rəsmi pmbootstrap alətini klonla və quraşdır
         run: |
           git clone https://gitlab.com/postmarketOS/pmbootstrap.git ~/pmbootstrap
-          mkdir -p ~/.local/bin
-          ln -s ~/pmbootstrap/pmbootstrap.py ~/.local/bin/pmbootstrap
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          cd ~/pmbootstrap
+          sudo python3 setup.py install
 
-      - name: 3. pmbootstrap-ı samsung-j2y18lte üçün avtomatik konfiqurasiya et
+      - name: 3. pmbootstrap konfiqurasiyasını yarat
         run: |
           mkdir -p ~/.config
           cat << 'EOF' > ~/.config/pmbootstrap.cfg
@@ -61,21 +60,21 @@ jobs:
 
       - name: 4. pmaports bazasını endir və kanal seç
         run: |
-          pmbootstrap -y status || true
-          git -C ~/.local/var/pmbootstrap/cache_git/pmaports checkout ${{ github.event.inputs.edge_channel }}
+          pmbootstrap -y init || true
+          git -C ~/.local/var/pmbootstrap/cache_git/pmaports checkout ${{ github.event.inputs.edge_channel }} || true
 
-      - name: 5. postmarketOS imicini yığ (Rootfs + Boot.img)
+      - name: 5. postmarketOS imicini yığ
         run: |
           printf "147147\n147147\n" | pmbootstrap -y install --android-recovery-zip || \
           printf "147147\n147147\n" | pmbootstrap -y install
 
-      - name: 6. Hazır faylları bir qovluğa topla
+      - name: 6. Hazır faylları topla
         run: |
           mkdir -p ~/output_files
           pmbootstrap export ~/output_files
           ls -lh ~/output_files/
 
-      - name: 7. Hazır ROM fayllarını GitHub Artifacts-ə yüklə
+      - name: 7. Artifacts-ə yüklə
         uses: actions/upload-artifact@v4
         with:
           name: postmarketOS-samsung-j2y18lte-${{ github.event.inputs.ui_choice }}
