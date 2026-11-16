@@ -2,15 +2,6 @@ name: Build postmarketOS for J2 Pro 2018 (j2y18lte)
 
 on:
   workflow_dispatch:
-    inputs:
-      ui_choice:
-        description: 'İstifadəçi interfeysi (console, phosh, sxmo-de-sway, xfce4)'
-        required: true
-        default: 'console'
-      edge_channel:
-        description: 'Kanal (edge və ya v25.12)'
-        required: true
-        default: 'edge'
 
 jobs:
   build-pmos:
@@ -18,63 +9,29 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - name: 1. Sistem paketlərini qur
-        run: sudo apt-get update && sudo apt-get install -y python3-pip git openssl
+      - name: 1. Sistem paketlərini quraşdır
+        run: sudo apt-get update && sudo apt-get install -y python3-pip git curl
 
-      - name: 2. pmbootstrap-ı birbaşa pip ilə quraşdır
+      - name: 2. pmbootstrap quraşdır
         run: |
-          pip3 install --user --break-system-packages git+https://gitlab.com/postmarketOS/pmbootstrap.git
+          pip3 install --user --break-system-packages pmbootstrap
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: 3. pmbootstrap konfiqurasiyasını yarat
+      - name: 3. Konfiqurasiya və quraşdırma
         run: |
-          mkdir -p ~/.config
-          cat << 'EOF' > ~/.config/pmbootstrap.cfg
-          [pmbootstrap]
-          aports = /home/runner/.local/var/pmbootstrap/cache_git/pmaports
-          ccache_size = 5G
-          is_default_channel = False
-          device = samsung-j2y18lte
-          extra_packages = none
-          hostname = j2pro
-          build_pkgs_on_install = True
-          jobs = 4
-          kernel = downstream
-          keymap = 
-          locale = C.UTF-8
-          mirror_alpine = http://dl-cdn.alpinelinux.org/alpine/
-          mirrors_postmarketos = http://mirror.postmarketos.org/postmarketos/
-          nonfree_firmware = True
-          nonfree_userland = False
-          ssh_keys = False
-          ssh_key_glob = ~/.ssh/id_*.pub
-          timezone = Asia/Baku
-          ui = ${{ github.event.inputs.ui_choice }}
-          ui_extras = False
-          user = user
-          work = /home/runner/.local/var/pmbootstrap
-          EOF
+          pmbootstrap -y init --workspace=/home/runner/work/pmos --device=samsung-j2y18lte --ui=console
+          pmbootstrap -y install --android-recovery-zip || pmbootstrap -y install
 
-      - name: 4. pmaports bazasını endir və kanal seç
-        run: |
-          pmbootstrap -y init || true
-          git -C ~/.local/var/pmbootstrap/cache_git/pmaports checkout ${{ github.event.inputs.edge_channel }} || true
-
-      - name: 5. postmarketOS imicini yığ
-        run: |
-          printf "147147\n147147\n" | pmbootstrap -y install --android-recovery-zip || \
-          printf "147147\n147147\n" | pmbootstrap -y install
-
-      - name: 6. Hazır faylları topla
+      - name: 4. Faylları topla
         run: |
           mkdir -p ~/output_files
           pmbootstrap export ~/output_files
           ls -lh ~/output_files/
 
-      - name: 7. Artifacts-ə yüklə
+      - name: 5. Artifacts-ə yüklə
         uses: actions/upload-artifact@v4
         with:
-          name: postmarketOS-samsung-j2y18lte-${{ github.event.inputs.ui_choice }}
+          name: postmarketOS-samsung-j2y18lte
           path: ~/output_files/*
           retention-days: 7
           
